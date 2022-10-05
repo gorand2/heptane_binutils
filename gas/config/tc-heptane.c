@@ -2414,7 +2414,7 @@ static void output_load_store_32(int rA,int rB,int off,char suffix,int st) {
   return;
 }
 
-static void output_spec_load_fpu(int code) {
+static void output_spec_load_fpu(int codeF) {
 
 	//not yet done; copied from int
   unsigned char code[10]={0,0,0,0,0,0,0,0,0,0};
@@ -2719,7 +2719,7 @@ static void output_double3(void) {
 	//packed
 	if (i.tm.size_offsets==3 && i.tm.name[0]!='m') goto bits_32;
 	code[0]=i.tm.base_opcode + i.tm.size_offsets&0x1 + ((i.tm.size_offsets
-	&0x2)<<5) + ((i.op[rB].reg->reg_num&0x10)<<3);
+	&0x2)<<5) + ((i.op[rB].regs->reg_num&0x10)<<3);
 	code[1]=i.op[rA].regs->reg_num | ((i.op[rB].regs->reg_num&0xf)<<4);
       }
       FRAG_APPEND_1_CHAR(code[0]);      
