@@ -22,11 +22,16 @@
 
 const insn_template heptane_optab[] =
 {
-    { "add", instrg_isBasicALU, 0, None,0x03020100 } ,   
-    { "sub", instrg_isBasicALU, 4, None,0x03020100 } ,   
-    { "and", instrg_isBasicALU, 8, None,0x03020100 } ,   
-    { "or",  instrg_isBasicALU, 12, None,0x03020100 } ,   
-    { "xor", instrg_isBasicALU, 16, None,0x03020100 } ,   
+    { "add", instrg_isBasicALU, 0, None,0x01010100 } ,   
+    { "sub", instrg_isBasicALU, 4, None,0x01010100 } ,   
+    { "and", instrg_isBasicALU, 8, None,0x01010100 } ,   
+    { "or",  instrg_isBasicALU, 12, None,0x01010100 } ,   
+    { "xor", instrg_isBasicALU, 16, None,0x01010100 } ,   
+    { "addx", instrg_isBasicALU, 0, 1,0x01010100 } ,   
+    { "subx", instrg_isBasicALU, 4, 1,0x01010100 } ,   
+    { "andx", instrg_isBasicALU, 8, 1,0x01010100 } ,   
+    { "orx",  instrg_isBasicALU, 12, 1,0x01010100 } ,   
+    { "xorx", instrg_isBasicALU, 16, 1,0x01010100 } ,   
 
     { "sal",  instrg_isBasicShift, 20, 0,0xffffff00 } ,   
     { "sal",  instrg_isBasicShift, 20, 1,0xff00ffff } ,   
@@ -56,8 +61,8 @@ const insn_template heptane_optab[] =
     { "movzb", instrg_isExt, 187, 0, 0xffff0000} ,
     { "movzw", instrg_isExt, 188, 0, 0xffff0000} ,
     
-    { "cmp", instrg_isBasicCmpTest, 46, 0, 0x03020100} ,
-    { "test", instrg_isBasicCmpTest, 50, 0, 0x03020100} ,
+    { "cmp", instrg_isBasicCmpTest, 46, 0, 0xffff0100} ,
+    { "test", instrg_isBasicCmpTest, 50, 0, 0xffff0100} ,
     { "jz", instrg_isCondJump, 180, 0, 0xffffffff},
     { "je", instrg_isCondJump, 180, 0, 0xffffffff},
     { "jnz", instrg_isCondJump, 180, 1, 0xffffffff},
