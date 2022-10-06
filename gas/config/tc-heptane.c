@@ -3334,16 +3334,20 @@ static void output_mov_ext(void)
     output_spec_load();
     if (i.suffix=='l' || i.suffix=='q') {
       switch(i.tm.base_opcode) {
+    case 183: //mov
+        code[0]=i.suffix=='l' ? 0x21 : 0x20;
     case 189: //movsb*
-        code[0]=i.suffix=='l' ? 24 : 26; 
-        if (i.op[1].regs->reg_num>=0) break;
+        code[0]=i.suffix=='l' ? 0x24 : 0x26; 
+        if (i.suffix=='l') break;
         code[0]=i.suffix=='l' ? 189 : 191;
         goto mem_4byte;
     case 190: //movsw*
-        code[0]=i.suffix=='l' ? 25 : 27;
-        break;
+        code[0]=i.suffix=='l' ? 0x25 : 0x27;
+        if (i.suffix=='l') break;
+        code[0]=i.suffix=='l' ? 190 : 192;
+        goto mem_4byte;
     case 193: //movslq
-        code[0]=28;
+        code[0]=0x28;
         break;
     default: as_bad(_("Unreachable code\n"));
         return;
@@ -3385,28 +3389,27 @@ static void output_mov_ext(void)
     //regonly 
     if (i.suffix=='l' || i.suffix=='q') {
       switch(i.tm.base_opcode) {
+    case 183: //mov
+        code[0]=i.suffix=='l' ? 0x21 : 0x20;
     case 189: //movsb*
-        code[0]=i.suffix=='l' ? 24 : 26; 
-        if (i.op[1].regs->reg_num>=0) break;
+        code[0]=i.suffix=='l' ? 0x24 : 0x26; 
+        if (i.suffix=='l') break;
         code[0]=i.suffix=='l' ? 189 : 191;
-        goto reg_4byte;
+        goto mem_4byte;
     case 190: //movsw*
-        code[0]=i.suffix=='l' ? 25 : 27;
-        break;
+        code[0]=i.suffix=='l' ? 0x25 : 0x27;
+        if (i.suffix=='l') break;
+        code[0]=i.suffix=='l' ? 190 : 192;
+        goto mem_4byte;
     case 193: //movslq
         code[0]=28;
         break;
     case 187: //movzb*
-        code[0]=22;
-        if (i.op[1].regs->reg_num>=0 && i.op[0].regs->reg_num>=0) break;
         code[0]=187;
         goto reg_4byte;
     case 188: //movzw*
-        code[0]=23;
-        break;
-    case 183: //mov*
-        code[0]=i.suffix=='l' ?  21 : 20;
-        break;
+        code[0]=188;
+        goto reg_4byte;
   //need more
     default: as_bad(_("Unreachable code\n"));
         return;
@@ -3453,7 +3456,8 @@ static void output_mov_ext(void)
   else rA=i.op[1].regs->reg_num;
   
   if (i.op[0].imms->X_op==O_constant && i.op[0].imms->X_add_number>=1 && 
-    i.op[0].imms->X_add_number<=32 && (i.suffix=='l' || i.suffix=='q')) {
+    i.op[0].imms->X_add_number<=32 && (i.suffix=='l' || i.suffix=='q') && 
+    code[0]==183) {
     code[0]=0x29;
     code[0]|=(rA&0x10)<<3;
     code[0]|=(i.op[0].imms->X_add_number&0x10)<<2;
@@ -3682,7 +3686,8 @@ static void output_alu(void)
   if (i.imm_operands==1 && i.mem_operands==0) {
      if (i.op[immop].imms->X_op==O_constant && 
        (i.op[immop].imms->X_add_number<=32) &&
-       (i.op[immop].imms->X_add_number>0)) goto do_smallest_const;
+       (i.op[immop].imms->X_add_number>0) && !i.tm.extension_opcode &&
+       i.suffix!='b' && i.suffix!='w') goto do_smallest_const;
      else if (i.op[immop].imms->X_op==O_constant && 
        (i.op[immop].imms->X_add_number<=4095) &&
        (i.op[immop].imms->X_add_number>=-4096)) goto do_small_const;
@@ -3703,7 +3708,7 @@ do_register:
   }
 //  FRAG_APPEND_1_CHAR(code);
     if (i.op[rT].regs->reg_num==i.op[rA].regs->reg_num && 
-      (i.suffix=='l' || i.suffix=='q'))
+      (i.suffix=='l' || i.suffix=='q') && !i.tm.extension_opcode)
     {
 	xA=i.op[rA].regs->reg_num;
 	xB=i.op[rB].regs->reg_num;
