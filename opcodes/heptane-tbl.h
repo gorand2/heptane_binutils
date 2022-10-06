@@ -22,35 +22,21 @@
 
 const insn_template heptane_optab[] =
 {
-    { "add", instrg_isBasicALU, 0, None,0x01010100 } ,   
-    { "sub", instrg_isBasicALU, 4, None,0x01010100 } ,   
-    { "and", instrg_isBasicALU, 8, None,0x01010100 } ,   
-    { "or",  instrg_isBasicALU, 12, None,0x01010100 } ,   
-    { "xor", instrg_isBasicALU, 16, None,0x01010100 } ,   
-    { "addx", instrg_isBasicALU, 0, 1,0x01010100 } ,   
-    { "subx", instrg_isBasicALU, 4, 1,0x01010100 } ,   
-    { "andx", instrg_isBasicALU, 8, 1,0x01010100 } ,   
-    { "orx",  instrg_isBasicALU, 12, 1,0x01010100 } ,   
-    { "xorx", instrg_isBasicALU, 16, 1,0x01010100 } ,   
+    { "add", instrg_isBasicALU, 0, 0,0xffff0100 } ,   
+    { "sub", instrg_isBasicALU, 4, 0,0xffff0100 } ,   
+    { "and", instrg_isBasicALU, 8, 0,0xffff0100 } ,   
+    { "or",  instrg_isBasicALU, 12, 0,0xffff0100 } ,   
+    { "xor", instrg_isBasicALU, 16, 0,0xffff0100 } ,   
+    { "addx", instrg_isBasicALU, 0, 1,0xffff0100 } ,   
+    { "subx", instrg_isBasicALU, 4, 1,0xffff0100 } ,   
+    { "andx", instrg_isBasicALU, 8, 1,0xffff0100 } ,   
+    { "orx",  instrg_isBasicALU, 12, 1,0xffff0100 } ,   
+    { "xorx", instrg_isBasicALU, 16, 1,0xffff0100 } ,   
 
-    { "sal",  instrg_isBasicShift, 20, 0,0xffffff00 } ,   
-    { "sal",  instrg_isBasicShift, 20, 1,0xff00ffff } ,   
-    { "sal",  instrg_isBasicShift, 23, 0,0xffff00ff } ,   
-    { "sal",  instrg_isBasicShift, 23, 1,0x00ffffff } ,   
-    { "shl",  instrg_isBasicShift, 20, 0,0xffffff00 } ,   
-    { "shl",  instrg_isBasicShift, 20, 1,0xff00ffff } ,   
-    { "shl",  instrg_isBasicShift, 23, 0,0xffff00ff } ,   
-    { "shl",  instrg_isBasicShift, 23, 1,0x00ffffff } ,   
-
-    { "sar",  instrg_isBasicShift, 21, 0,0xffffff00 } ,   
-    { "sar",  instrg_isBasicShift, 21, 1,0xff00ffff } ,   
-    { "sar",  instrg_isBasicShift, 24, 0,0xffff00ff } ,   
-    { "sar",  instrg_isBasicShift, 24, 1,0x00ffffff } ,   
-
-    { "shr",  instrg_isBasicShift, 22, 0,0xffffff00 } ,   
-    { "shr",  instrg_isBasicShift, 22, 1,0xff00ffff } ,   
-    { "shr",  instrg_isBasicShift, 25, 0,0xffff00ff } ,   
-    { "shr",  instrg_isBasicShift, 25, 1,0x00ffffff } ,
+    { "sal",  instrg_isBasicShift, 20, 0,0xffff0300 } ,   
+    { "shl",  instrg_isBasicShift, 20, 0,0xffff0300 } ,   
+    { "sar",  instrg_isBasicShift, 21, 0,0xffff0300 } ,   
+    { "shr",  instrg_isBasicShift, 22, 0,0xffff0300 } ,   
     
     { "mov",  instrg_isMov, 183, 0, 0x03020100 } ,
     
@@ -61,7 +47,7 @@ const insn_template heptane_optab[] =
     { "movzb", instrg_isExt, 187, 0, 0xffff0000} ,
     { "movzw", instrg_isExt, 188, 0, 0xffff0000} ,
     
-    { "cmp", instrg_isBasicCmpTest, 46, 0, 0xffff0100} ,
+    { "cmp", instrg_isBasicCmpTest, 46, 0, 0xaaac0100} ,
     { "test", instrg_isBasicCmpTest, 50, 0, 0xffff0100} ,
     { "jz", instrg_isCondJump, 180, 0, 0xffffffff},
     { "je", instrg_isCondJump, 180, 0, 0xffffffff},
