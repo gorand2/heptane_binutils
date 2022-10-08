@@ -4251,7 +4251,7 @@ output_disp (fragS *insn_start_frag, offsetT insn_start_off)
 	      int pcrel = (i.flags[n] & Operand_PCrel) != 0;
 	      //fixS *fixP;
 
-              gas_assert(i.imm_operands==0);
+              //gas_assert(i.imm_operands==0);
 
 	      p = frag_more (size);
 	      reloc_type = reloc (size, pcrel, sign, i.reloc[n]);
