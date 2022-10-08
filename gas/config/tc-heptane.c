@@ -3216,6 +3216,8 @@ case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
   return;
 }
 
+static void output_spec_store(int no);
+
 static void output_shift(void)
 {
   unsigned char code[10];
@@ -3687,6 +3689,197 @@ static void output_mov_ext(void)
 }
 
 static void output_spec_store(int no) {
+    unsigned char code[10],code_s;
+    int rT,rB,rA,store,memop;
+    int disp_var;
+    store=operand_type_check(i.types[1],anymem);
+    memop=store;
+    rB=16;
+    if (i.suffix=='b') code_s=3; //byte zx
+    if (i.suffix=='w') code_s=2; //word zx
+    if (i.suffix=='l') code_s=1; //32 bit
+    if (i.suffix=='q') code_s=0; //64 bit
+    disp_var=operand_type_check(i.types[memop],disp); 
+    if (i.index_reg) {
+      code[0]=0x70+(code_s<<1)+store;
+      if (!disp_var || (i.op[memop].disps->X_op==O_constant && 
+        i.op[memop].disps->X_add_number>=-64
+        && i.op[memop].disps->X_add_number<=63 && (!i.base_reg||!(i.base_reg->
+        reg_num&0x10)) && !(i.index_reg->reg_num&0x10))) {//9 bit disp
+        if (disp_var) disp_var=i.op[memop].disps->X_add_number;
+        else disp_var=0;
+        code[1]=(rB&0xf);
+        if (i.base_reg) code[1]|=((i.base_reg->reg_num&0xf)<<4);
+        else code[1]|=5<<4;
+        code[2]=(i.index_reg->reg_num&0xf);
+        code[2]|=((i.log2_scale_factor&0x3)<<5)|((disp&0x1)<<7);
+        code[3]=(disp&0xfe)>>1;
+        FRAG_APPEND_1_CHAR(code[0]);
+        FRAG_APPEND_1_CHAR(code[1]);
+        FRAG_APPEND_1_CHAR(code[2]);
+        FRAG_APPEND_1_CHAR(code[3]);
+       // p=code; 
+        frag_var (rs_machine_dependent, 30, i.reloc[memop], 
+	   ENCODE_RELAX_STATE(NON_JUMP,MED), NULL, 0, NULL);
+        return;
+      } else if (i.op[memop].disps->X_op==O_constant && i.op[memop].disps->X_add_number>=-4096*1024
+        && i.op[memop].disps->X_add_number<4096*1024) {//23 bit disp
+        disp_var=i.op[memop].disps->X_add_number;
+        code[1]=(rB&0xf);
+        if (i.base_reg) code[1]|=((i.base_reg->reg_num&0xf)<<4);
+        else code[1]|=5<<4;
+        code[2]=(i.index_reg->reg_num&0xf)|(rB&0x10)|
+             ((i.index_reg->reg_num&0x10)<<2);
+        if (i.base_reg) code[2]|=(i.base_reg->reg_num&0x10)<<1;     
+        code[2]|=i.log2_scale_factor&0x1;
+        code[3]=i.log2_scale_factor>>1;
+        code[3]|=(disp_var&0x7f)<<1;
+        code[4]=(disp_var&0x7f8)>>7;
+        code[5]=(disp_var&0x7f800)>>15;
+        FRAG_APPEND_1_CHAR(code[0]);
+        FRAG_APPEND_1_CHAR(code[1]);
+        FRAG_APPEND_1_CHAR(code[2]);
+        FRAG_APPEND_1_CHAR(code[3]);
+        FRAG_APPEND_1_CHAR(code[4]);
+        FRAG_APPEND_1_CHAR(code[5]);
+        frag_var (rs_machine_dependent, 30, i.reloc[memop], 
+	   ENCODE_RELAX_STATE(NON_JUMP,BIG), NULL, 0, NULL);
+        return;
+      } else { //32 bit disp
+        code[1]=(rB&0xf);
+        if (i.base_reg) code[1]|=((i.base_reg->reg_num&0xf)<<4);
+        else code[1]|=5<<4;
+        code[6]=(i.index_reg->reg_num&0xf)|((rB&0x10)<<2);
+        if (i.base_reg) code[6]|=((i.base_reg->reg_num&0x10)<<3);
+        code[7]=((i.index_reg->reg_num&0x10)>>4);
+        code[6]|=i.log2_scale_factor<<4;
+        FRAG_APPEND_1_CHAR(code[0]);
+        FRAG_APPEND_1_CHAR(code[1]);
+        output_disp(frag_now,2);
+        FRAG_APPEND_1_CHAR(code[6]);
+        FRAG_APPEND_1_CHAR(code[7]);
+        frag_var (rs_machine_dependent, 30, i.reloc[memop], 
+	   ENCODE_RELAX_STATE(NON_JUMP,BIGGER), NULL, 0, NULL);
+        return;
+      }
+    } else if (i.base_reg && i.base_reg->reg_num!=255) {
+      code[0]=0x60+(code_s<<1)+store;
+      if (!disp_var || (i.op[memop].disps->X_op==O_constant && i.op[memop].disps->X_add_number>=-8192
+        && i.op[memop].disps->X_add_number<=8191)) {//14 bit disp
+        code[1]=(i.base_reg->reg_num&0xf)|((rB&0xf)<<4);
+        if (disp_var) disp_var=i.op[memop].disps->X_add_number;
+        else disp_var=0;
+        code[2]=((rB&0x10)>>4)|((i.base_reg->reg_num&0x10)>>3);
+        code[2]|=(disp_var&0x3f)<<2;
+        code[3]=(disp_var&0x3fc0)>>6;
+        FRAG_APPEND_1_CHAR(code[0]);
+        FRAG_APPEND_1_CHAR(code[1]);
+        FRAG_APPEND_1_CHAR(code[2]);
+        FRAG_APPEND_1_CHAR(code[3]);
+        frag_var (rs_machine_dependent, 30, i.reloc[memop], 
+	   ENCODE_RELAX_STATE(NON_JUMP,MED), NULL, 0, NULL);
+        return;
+      } else if ((!(rB&0x10))&&(!(i.base_reg->reg_num&0x10))){//32 bit disp, 16 reg
+        code[1]=((i.base_reg->reg_num&0xf)<<4)|(rB&0xf);
+        FRAG_APPEND_1_CHAR(code[0]);
+        FRAG_APPEND_1_CHAR(code[1]);
+        output_disp(frag_now,2);
+        frag_var (rs_machine_dependent, 30, i.reloc[memop], 
+	   ENCODE_RELAX_STATE(NON_JUMP,BIG), NULL, 0, NULL);
+        return;
+      } else { //32 bit disp, 32 reg
+        code[1]=(rB&0xf);
+        code[1]|=((i.base_reg->reg_num&0xf)<<4);
+        code[0]=0x70+(code_s<<1)+store;
+        
+        code[6]=((rB&0x10)<<2);
+        code[6]|=((i.base_reg->reg_num&0x10)<<3);
+        code[7]=0x2;
+        FRAG_APPEND_1_CHAR(code[0]);
+        FRAG_APPEND_1_CHAR(code[1]);
+        output_disp(frag_now,2);
+        FRAG_APPEND_1_CHAR(code[6]);
+        FRAG_APPEND_1_CHAR(code[7]);
+        frag_var (rs_machine_dependent, 30, i.reloc[memop], 
+	   ENCODE_RELAX_STATE(NON_JUMP,BIGGER), NULL, 0, NULL);
+        return;
+      }
+    } else { //imm only load store
+      if (i.op[memop].disps->X_op==O_constant && i.op[memop].disps->X_add_number
+        >=-8192 && i.op[memop].disps->X_add_number<=8191 && i.base_reg) {
+        if (operand_type_check(i.types[memop],disp)) disp_var=i.op[memop].disps->
+          X_add_number; 
+        code[0]=0xb0|memop;
+        code[1]=(code_s) | ((rB&0xf)<<4) | ((i.base_reg!=NULL)<<4);
+        code[2]=((rB&0x10)>>4) | ((disp_var & 0x3f)<<2);
+        code[3]=(disp_var & 0x3fc0)>>6; 
+        FRAG_APPEND_1_CHAR(code[0]);
+        FRAG_APPEND_1_CHAR(code[1]);
+        FRAG_APPEND_1_CHAR(code[2]);
+        FRAG_APPEND_1_CHAR(code[3]);
+        frag_var (rs_machine_dependent, 30, i.reloc[memop], 
+	   ENCODE_RELAX_STATE(NON_JUMP,MED), NULL, 0, NULL);
+        return;
+      } else if (!(rB&0x10)) {
+        code[0]=0xb0|memop;
+        code[1]=(code_s) | ((rB&0xf)<<4) | ((i.base_reg!=NULL)<<4);
+        FRAG_APPEND_1_CHAR(code[0]);
+        FRAG_APPEND_1_CHAR(code[1]);
+        output_disp(frag_now,2);
+        frag_var (rs_machine_dependent, 30, i.reloc[memop], 
+	   ENCODE_RELAX_STATE(NON_JUMP,BIG), NULL, 0, NULL);
+        return;
+      } else {
+        code[1]=(rB&0xf);
+        code[0]=0x70+(code_s<<1)+store;
+        
+        code[6]=((rB&0x10)<<2);
+        code[7]=0x4 | ((i.base_reg!=NULL)<<3);
+        FRAG_APPEND_1_CHAR(code[0]);
+        FRAG_APPEND_1_CHAR(code[1]);
+        output_disp(frag_now,2);
+        FRAG_APPEND_1_CHAR(code[6]);
+        FRAG_APPEND_1_CHAR(code[7]);
+        frag_var (rs_machine_dependent, 30, i.reloc[memop], 
+	   ENCODE_RELAX_STATE(NON_JUMP,BIGGER), NULL, 0, NULL);
+        return;
+      }
+    }
+    as_bad(_("unreachable code in output_spec_store"));
+}
+
+static void output_cmov(void) {
+  unsigned char code[10],code_s;
+  int rT,rB,rA,memop;
+  int disp_var;
+  memop=operand_type_check(i.types[0],anymem);
+  if (memop) {
+      output_spec_load();
+      rA=i.op[1].regs->reg_num;
+      rT=i.operands==2 ? rA : i.op[2].regs->reg_num;
+      rB=16;
+  } else {
+      rA=i.op[1].regs->reg_num;
+      rT=i.operands==2 ? rA : i.op[2].regs->reg_num;
+      rB=i.op[0].regs->reg_num;
+  }
+  code[0]=198;
+  code[1]=(rA&0xf) | ((rT&0xf)<<4);
+  code[2]=((rA&0x10)>>3) | ((rT&0x10)>>4) | ((rB&0x1f)<<2);
+  code_s=i.suffix=='l' ? 2 :0;
+  code[3]=((i.tm.extension_opcode&1)+code_s)<<2;
+  code[3]|=((i.tm.extension_opcode&6)>>2);
+  code[2]|=((i.tm.extension_opcode&8)<<4);
+  FRAG_APPEND_1_CHAR(code[0]);
+  FRAG_APPEND_1_CHAR(code[1]);
+  FRAG_APPEND_1_CHAR(code[2]);
+  FRAG_APPEND_1_CHAR(code[3]);
+  frag_var (rs_machine_dependent, 30, i.reloc[0], 
+    ENCODE_RELAX_STATE(NON_JUMP,MED), NULL, 0, NULL);
+  return;
+}
+
+static void output_calu(void) {
 }
 
 static void output_alu(void)
@@ -3970,6 +4163,12 @@ output_insn (void)
     break;
   case instrg_isCSet:
     output_cset();
+    break;
+  case instrg_isCmov:
+    output_cmov();
+    break;
+  case instrg_calu:
+    output_calu();
     break;
   case instrg_isIndirJump:
     break;
