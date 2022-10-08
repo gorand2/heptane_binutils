@@ -86,6 +86,7 @@ const insn_template heptane_optab[] =
     { "call", instrg_isCall, -1, 0, 0xffffffff},
     { "ret", instrg_isRet, -1, 0, 0xffffffff},
     { "movabs", instrg_mov_abs, -1, 0, 0xffffff00},
+    { "movabsp", instrg_mov_abs, -1, 1, 0xffffff00},
     { "movdqu", instrg_mov_xmm_i, 0x40, 0x54, 0xffffffff},
     { "movdqa", instrg_mov_xmm_i, 0x58, 0x40, 0xffffffff},
     { "movups", instrg_mov_xmm_i, 0x44, 0x58, 0xffffffff},

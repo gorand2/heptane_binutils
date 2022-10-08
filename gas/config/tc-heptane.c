@@ -3302,7 +3302,8 @@ case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
 static void output_mov_abs(void) {
   unsigned char code[10];
   code[0]=183;
-  code[1]=((i.op[1].regs->reg_num&0xf)<<4)|((i.op[1].regs->reg_num&0x10)>>3);
+  code[1]=((i.op[1].regs->reg_num&0xf)<<4)|((i.op[1].regs->reg_num&0x10)>>3)|
+    ((i.tm.extension_opcode&1)<<7);
   FRAG_APPEND_1_CHAR(code[0]);      
   FRAG_APPEND_1_CHAR(code[1]);      
   output_imm(frag_now,2);
