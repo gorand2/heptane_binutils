@@ -3686,6 +3686,9 @@ static void output_mov_ext(void)
     as_bad(_("unreachable code in output_mov_ext"));
 }
 
+static void output_spec_store(int no) {
+}
+
 static void output_alu(void)
 {
   //fragS *insn_start_frag;
@@ -3876,10 +3879,57 @@ do_memory:
        // p=code; 
         frag_var (rs_machine_dependent, 30, i.reloc[0], 
 	   ENCODE_RELAX_STATE(NON_JUMP,MED), NULL, 0, NULL);
+	output_spec_store(i.suffix=='l' ? 17 : 16);
   return;
   store_small_const:
+  code[0]=i.tm.base_opcode;
+  switch (i.suffix) {
+  case 'q' : code[0]+=(i.tm.size_offsets&0xff); break;
+  case 'l' : code[0]+=(i.tm.size_offsets&0xff00)>>8; break;
+  case 'w' : code[0]+=(i.tm.size_offsets&0xff0000)>>16; break;
+  case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
+  }
+  FRAG_APPEND_1_CHAR(code[0]);
+  code[1]=0;
+  FRAG_APPEND_1_CHAR(code[1]);
+  code[2]=((0x10)>>3)|((0x10)>>4)
+    | ((i.op[immop].imms->X_add_number&0x3f)<<2);
+  FRAG_APPEND_1_CHAR(code[2]);
+  code[3]=(i.op[immop].imms->X_add_number&0x1fc)>>6;
+  code[3]|=i.tm.extension_opcode ? 0x80 : 0;
+  FRAG_APPEND_1_CHAR(code[3]);
+  frag_var (rs_machine_dependent, 30, i.reloc[immop], 
+    ENCODE_RELAX_STATE(NON_JUMP,MED), NULL, 0, NULL);
+  output_spec_store(i.suffix=='l' ? 17 : 16);
   return;
   store_big_const:
+  code[0]=i.tm.base_opcode;
+  switch (i.suffix) {
+  case 'q' : code[0]+=(i.tm.size_offsets&0xff); break;
+  case 'l' : code[0]+=(i.tm.size_offsets&0xff00)>>8; break;
+  case 'w' : code[0]+=(i.tm.size_offsets&0xff0000)>>16; break;
+  case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
+  }
+  xA=16;
+  xT=16;
+  code[1]=(xA&0xf ) | ((xT&0xf)<<4);
+  FRAG_APPEND_1_CHAR(code[0]);
+  FRAG_APPEND_1_CHAR(code[1]);
+  output_imm(frag_now,2);
+  if ((xA&0x10) || (xT&0x10)){
+    code[6]=((xA&0x10)>>4)|((xT&0x10)>>3);
+    code[7]=0;
+    FRAG_APPEND_1_CHAR(code[6]);
+    FRAG_APPEND_1_CHAR(code[7]);
+    frag_var (rs_machine_dependent, 30, i.reloc[immop], 
+      ENCODE_RELAX_STATE(NON_JUMP,BIGGER), NULL, 0, NULL);
+    output_spec_store(i.suffix=='l' ? 17 :16);
+    return;
+  }
+      
+  frag_var (rs_machine_dependent, 30, i.reloc[immop], 
+    ENCODE_RELAX_STATE(NON_JUMP,BIG), NULL, 0, NULL);
+  output_spec_store(i.suffix=='l' ? 17 :16);
   return;
 }
 
@@ -3917,6 +3967,9 @@ output_insn (void)
     break;
   case instrg_isUncondJump:
     output_uc_jump();
+    break;
+  case instrg_isCSet:
+    output_cset();
     break;
   case instrg_isIndirJump:
     break;
