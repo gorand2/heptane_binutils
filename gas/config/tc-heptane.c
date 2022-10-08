@@ -3226,8 +3226,8 @@ static void output_shift(void)
   immop=i.operands==2 ? 0 : 1;
   rA=1;
   rT=i.operands==2 ? 1 : 2;
-  if (memop) as_bad(_("memory shifts not implemented yet."));
- // if (memop) output_spec_load();
+  //if (memop) as_bad(_("memory shifts not implemented yet."));
+  if (memop) output_spec_load();
   if (i.imm_operands && !memop) goto do_imm_reg;
   code[0]=i.tm.base_opcode;
   switch(i.suffix) {
@@ -3236,9 +3236,13 @@ case 'l' : code[0]+=(i.tm.size_offsets&0xff00)>>8; break;
 case 'w' : code[0]+=(i.tm.size_offsets&0xff0000)>>16; break;
 case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
   }      
-  code[1]=(i.op[rA].regs->reg_num&0xf)|((i.op[rT].regs->reg_num&0xf)<<4);
-  code[2]=((i.op[rA].regs->reg_num&0x10)>>3)|((i.op[rT].regs->reg_num&0x10)>>4)
-    |((i.op[0].regs->reg_num&0x1f)<<1); 
+  if (!memop) {
+      code[1]=(i.op[rA].regs->reg_num&0xf)|((i.op[rT].regs->reg_num&0xf)<<4);
+      code[2]=((i.op[rA].regs->reg_num&0x10)>>3)|((i.op[rT].regs->reg_num&0x10)>>4) |((i.op[0].regs->reg_num&0x1f)<<2);
+  } else {
+      code[1]=0;
+      code[2]=((0x10)>>3)|((0x10)>>4) |((i.op[0].regs->reg_num&0x1f)<<2);
+  }
   code[3]=(i.tm.name[strlen(i.tm.name)-1]=='x') | (i.tm.extension_opcode<<7);
   FRAG_APPEND_1_CHAR(code[0]);
   FRAG_APPEND_1_CHAR(code[1]);
@@ -3247,7 +3251,7 @@ case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
         
   frag_var (rs_machine_dependent, 30, i.reloc[0], 
        ENCODE_RELAX_STATE(NON_JUMP,MED), NULL, 0, NULL);
-//  if (memop) output_spec_store(16);
+  if (memop) output_spec_store(i.suffix=='q' ? 16 : 17);
   return;
 
    
@@ -3273,7 +3277,7 @@ case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
     FRAG_APPEND_1_CHAR(code[1]);      
     frag_var (rs_machine_dependent, 30, i.reloc[0], 
        ENCODE_RELAX_STATE(NON_JUMP,SMALL), NULL, 0, NULL);
-  //  if (memop) output_spec_store(16);
+    if (memop) output_spec_store(i.suffix=='q' ? 16 : 17);
     return;
   } 
       code[0]=i.tm.base_opcode;
@@ -3294,11 +3298,24 @@ case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
         
     frag_var (rs_machine_dependent, 30, i.reloc[0], 
        ENCODE_RELAX_STATE(NON_JUMP,MED), NULL, 0, NULL);
-   // if (memop) output_spec_store(16);
+    if (memop) output_spec_store(i.suffix=='q' ? 16 : 17);
     return;
 
 }
-
+static void output_cset(void) {
+  unsigned char code[10];
+  code[0]=194;
+  code[1]=((i.tm.extension_opcode&0xf)<<4) | ((i.op[0].regs->reg_num&0xf));
+  code[2]=((i.op[0].regs->reg_num&0x10)>>3;
+  code[3]=0;
+  FRAG_APPEND_1_CHAR(code[0]);
+  FRAG_APPEND_1_CHAR(code[1]);
+  FRAG_APPEND_1_CHAR(code[2]);
+  FRAG_APPEND_1_CHAR(code[3]);
+        
+  frag_var (rs_machine_dependent, 30, i.reloc[0], 
+     ENCODE_RELAX_STATE(NON_JUMP,MED), NULL, 0, NULL);
+}
 static void output_mov_abs(void) {
   unsigned char code[10];
   code[0]=183;
