@@ -448,7 +448,8 @@ enum _instrg_ {
   instrg_isMI3_3,
   instrg_isMI3_2,
   instrg_isMI2_3,
-  instrg_isMI2_2
+  instrg_isMI2_2,
+  instrg_calu
 };
 
 /* Position of operand_type bits.  */
