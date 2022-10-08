@@ -907,11 +907,6 @@ operand_size_match (const insn_template *t)
       || t->group==instrg_isUncondJump)
     return match;
 
-  if (t->group==instrg_isBasicShift) {
-      if (!i.types[0].bitfield.reg8 && !i.types[0].bitfield.imm8) match=0;
-      if (!match_reg_size(t,1)) match=0;
-      if (i.operands>2 && !match_reg_size(t,2)) match=0;      
-  } else
   for (j = 0; j < i.operands; j++)
     {
        switch(t->group) {
@@ -921,7 +916,7 @@ operand_size_match (const insn_template *t)
        case instrg_isRet:
        break;
        default:
-	   if (!match_reg_size(t,j)) match=0;
+	   if (!match_reg_size(t,j) && operand_type_check(i.types[j],reg)) match=0;
 	   break;
        }
 
@@ -1929,14 +1924,14 @@ match_template (void)
       switch (t->group) {
       case instrg_isBasicALU: case instrg_isBasicShift: case instrg_isIMulShort: 
       case instrg_isBigIMul: case  instrg_isBasicAddNoFl: case  instrg_isShiftNoFl: 
-      case instrg_isFPU23Op: 
+      case instrg_isFPU23Op: case instrg_isCmov:
 	if (i.operands!=2 && i.operands!=3) continue;
 	break;
       case instrg_isAddNoFlExtra:
 	if (i.operands!=3) continue;
 	break;
       case instrg_isBasicCmpTest: case instrg_isCmpTestExtra: case  instrg_isBaseLoadStore: 
-        case instrg_isMov: case instrg_isExt: case instrg_isCmov:  case instrg_isImmLoadStore: 
+        case instrg_isMov: case instrg_isExt: case instrg_isImmLoadStore: 
         case  instrg_isFPU2Op: case instrg_isBaseLoadStoreF: 
         case instrg_isBaseIndexLoadStoreF: case instrg_isImmLoadStoreF: 
         case instrg_mov_abs: case instrg_mov_xmm_i:
@@ -1961,6 +1956,7 @@ match_template (void)
       case   instrg_isFPU23Op: case  instrg_isFPU2Op:
 	  //to do: handle suffix
 	  break;
+      default:
 	if (i.suffix==BYTE_MNEM_SUFFIX && (t->size_offsets&0xff000000)==0xff000000) continue;
 	else if (i.suffix==WORD_MNEM_SUFFIX && (t->size_offsets&0xff0000)==0xff0000) continue;
 	else if (i.suffix==SHORT_MNEM_SUFFIX && (t->size_offsets&0xff0000)==0xff0000) continue;
@@ -1968,7 +1964,7 @@ match_template (void)
 	else if (i.suffix==QWORD_MNEM_SUFFIX && (t->size_offsets&0xff)==0xff) continue;
 	else if (i.suffix==LONG_DOUBLE_MNEM_SUFFIX) continue;
 	break;
-        default:
+        //default:
         break;
       }
 
@@ -1983,7 +1979,9 @@ match_template (void)
       case instrg_isBasicALU: case instrg_isBasicShift: case instrg_isShiftNoFl:
 	  if (i.operands==2) {
 	      if (!heptane_type_regImm(i.types[0]) && !operand_type_check(i.types[0],anymem)) continue;  
-	      if (!heptane_type_reg(i.types[1])) continue;  
+	      if (!heptane_type_reg(i.types[1]) && !operand_type_check
+	      (i.types[1],anymem)) continue;
+	      if (operand_type_check(i.types[1],anymem) && operand_type_check(i.types[0],anymem)) continue;
 	  } else {
 	      if (!heptane_type_regImm(i.types[0]) && !operand_type_check(i.types[0],anymem)) continue;  
 	      if (!heptane_type_reg(i.types[1])) continue;  
@@ -2097,7 +2095,7 @@ match_template (void)
 	  if (operand_type_check(i.types[1],imm)) continue;
           break;
       case instrg_isExt:
-	  if (!heptane_type_reg(i.types[0]) || !heptane_type_reg(i.types[1])) continue;  
+	  if (!(heptane_type_reg(i.types[0]) || heptane_type_reg(i.types[1]))) continue;  
           if (i.imm_operands) continue;
 	  break;
       case instrg_push_pop:
@@ -3306,6 +3304,31 @@ case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
 }
 static void output_cset(void) {
   unsigned char code[10];
+  if (i.tm.base_opcode>=200) {
+      unsigned char code_s;
+      int rT,rB,rA,memop;
+      int disp_var;
+      rA=rB=rT=i.op[0].regs->reg_num;
+      code[0]=198;
+      code[1]=(rA&0xf) | ((rT&0xf)<<4);
+      code[2]=((rA&0x10)>>3) | ((rT&0x10)>>4) | ((rB&0x1f)<<2);
+      code_s=i.tm.base_opcode==200 ? (i.tm.extension_opcode&1) : 0;
+      code[3]=((((i.tm.base_opcode-200)&1)+code_s)<<2);
+      if (i.tm.base_opcode==200) {
+          code[3]|=((i.tm.extension_opcode&6)>>2);
+          code[2]|=((i.tm.extension_opcode&8)<<4);
+      } else {
+          code[3]|=((i.tm.base_opcode&6)<<2);
+         // code[2]|=((i.tm.extension_opcode&8)<<4);
+      }
+      FRAG_APPEND_1_CHAR(code[0]);
+      FRAG_APPEND_1_CHAR(code[1]);
+      FRAG_APPEND_1_CHAR(code[2]);
+      FRAG_APPEND_1_CHAR(code[3]);
+      frag_var (rs_machine_dependent, 30, i.reloc[0], 
+        ENCODE_RELAX_STATE(NON_JUMP,MED), NULL, 0, NULL);
+      return;
+  }
   code[0]=194;
   code[1]=((i.tm.extension_opcode&0xf)<<4) | ((i.op[0].regs->reg_num&0xf));
   code[2]=((i.op[0].regs->reg_num&0x10)>>3);
@@ -3369,8 +3392,10 @@ static void output_mov_ext(void)
     case 193: //movslq
         code[0]=0x28;
         break;
-    default: as_bad(_("Unreachable code\n"));
-        return;
+    default: 
+        code[0]=i.tm.base_opcode;
+        goto mem_4byte;
+        //return;
       } 
       //rA=i.op[1].regs->reg_num;
       rT=i.op[1].regs->reg_num;
@@ -3909,7 +3934,7 @@ static void output_alu(void)
   } else if (i.imm_operands==0) {
       if (i.mem_operands==0) goto do_register;
       else goto do_memory;
-  } else as_bad(_("Too many immediate operands."));
+  } else goto do_memory;
 	
 do_register:
  // frag_grow(2);
