@@ -3344,7 +3344,7 @@ static void output_cset(void) {
 static void output_mov_abs(void) {
   unsigned char code[10];
   code[0]=183;
-  code[1]=((i.op[1].regs->reg_num&0xf)<<4)|((i.op[1].regs->reg_num&0x10)>>3)|
+  code[1]=(i.op[1].regs->reg_num&0x1f)|
     ((i.tm.extension_opcode&1)<<7);
   FRAG_APPEND_1_CHAR(code[0]);      
   FRAG_APPEND_1_CHAR(code[1]);      
