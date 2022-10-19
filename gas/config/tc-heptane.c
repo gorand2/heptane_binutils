@@ -2556,7 +2556,7 @@ static void output_spec_load(void) {
   store=operand_type_check(i.types[1],anymem);
   memop=store;
   code[0]=0xb0;
-  code[1]=subcode | ((i.base_reg!=0)<<3) |0x60;//no imm load to rsp
+  code[1]=subcode | 0x8;//no imm load to rsp
   FRAG_APPEND_1_CHAR(code[0]);
   FRAG_APPEND_1_CHAR(code[1]);
   output_disp(frag_now,2);
