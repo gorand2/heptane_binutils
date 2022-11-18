@@ -47,7 +47,7 @@ const insn_template heptane_optab[] =
     { "movzb", instrg_isExt, 187, 0, 0xffff0000} ,
     { "movzw", instrg_isExt, 188, 0, 0xffff0000} ,
     
-    { "cmp", instrg_isBasicCmpTest, 46, 0, 0xaaac0100} ,
+    { "cmp", instrg_isBasicCmpTest, 46, 0, 0xacaa0100} ,
     { "test", instrg_isBasicCmpTest, 50, 0, 0xffff0100} ,
     { "jz", instrg_isCondJump, 180, 0, 0xffffffff},
     { "je", instrg_isCondJump, 180, 0, 0xffffffff},
