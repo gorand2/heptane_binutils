@@ -3965,11 +3965,12 @@ do_register:
     } else
     {
 	//3 op form
+	code[0]<<=1;
 	code[1]=((i.op[rT].regs->reg_num<<4) & 0xf0) | 
 	  (i.op[rA].regs->reg_num & 0xf);
-	code[2]=((i.op[rT].regs->reg_num>>5)&0x1) | 
-	  ((i.op[rA].regs->reg_num>>4)&0x2) |
-	  ((i.op[rB].regs->reg_num>>3)&0x7C);
+	code[2]=((i.op[rT].regs->reg_num>>4)&0x1) | 
+	  ((i.op[rA].regs->reg_num>>3)&0x2) |
+	  ((i.op[rB].regs->reg_num<<2)&0x7C);
 	code[3]=i.tm.extension_opcode ? 0x80 : 0x00;
         FRAG_APPEND_1_CHAR(code[0]);
         FRAG_APPEND_1_CHAR(code[1]);
@@ -4003,6 +4004,8 @@ do_small_const:
   case 'w' : code[0]+=(i.tm.size_offsets&0xff0000)>>16; break;
   case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
   }
+  code[0]<<=1;
+  code[0]++;
   FRAG_APPEND_1_CHAR(code[0]);
   code[1]=(i.op[rA].regs->reg_num&0xf)|((i.op[rT].regs->reg_num &0xf)<<4);
   FRAG_APPEND_1_CHAR(code[1]);
@@ -4023,6 +4026,8 @@ do_big_const:
   case 'w' : code[0]+=(i.tm.size_offsets&0xff0000)>>16; break;
   case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
   }
+  code[0]<<=1;
+  code[0]++;
   xA=i.op[rA].regs->reg_num;
   xT=i.op[rT].regs->reg_num;
   code[1]=(xA&0xf ) | ((xT&0xf)<<4);
@@ -4044,6 +4049,12 @@ do_big_const:
   return;
 do_memory:
   code[0]=i.tm.base_opcode;
+  switch (i.suffix) {
+  case 'q' : code[0]+=(i.tm.size_offsets&0xff); break;
+  case 'l' : code[0]+=(i.tm.size_offsets&0xff00)>>8; break;
+  case 'w' : code[0]+=(i.tm.size_offsets&0xff0000)>>16; break;
+  case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
+  }
   output_spec_load();
   if (!operand_type_check(i.types[0],anymem)) goto do_memory_store;
   if (i.suffix=='l' || i.suffix=='q') {
@@ -4060,6 +4071,7 @@ do_memory:
     frag_var (rs_machine_dependent, 30, i.reloc[0], 
       ENCODE_RELAX_STATE(NON_JUMP,SMALL), NULL, 0, NULL);
   } else {
+	code[0]<<=1;
 	code[1]=((i.op[rT].regs->reg_num<<4) & 0xf0) | 
 	  (i.op[rA].regs->reg_num & 0xf);
 	code[2]=((i.op[rT].regs->reg_num>>5)&0x1) | 
@@ -4076,7 +4088,14 @@ do_memory:
   }
   return;    
   do_memory_store:
-  code[0]=i.tm.base_opcode;
+      code[0]=i.tm.base_opcode;
+      switch (i.suffix) {
+      case 'q' : code[0]+=(i.tm.size_offsets&0xff); break;
+      case 'l' : code[0]+=(i.tm.size_offsets&0xff00)>>8; break;
+      case 'w' : code[0]+=(i.tm.size_offsets&0xff0000)>>16; break;
+      case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
+      }
+      code[0]<<=1;
         rB=1;
         if (i.imm_operands) {
           if (i.op[immop].imms->X_op==O_constant && 
@@ -4086,9 +4105,9 @@ do_memory:
         }
 	code[1]=((16<<4) & 0xf0) | 
 	  (16 & 0xf);
-	code[2]=((16>>5)&0x1) | 
-	  ((16>>4)&0x2) |
-	  ((i.op[rB].regs->reg_num>>3)&0x7C);
+	code[2]=((16>>4)&0x1) | 
+	  ((16>>3)&0x2) |
+	  ((i.op[rB].regs->reg_num<<2)&0x7C);
 	code[3]=i.tm.extension_opcode ? 0x80 : 0x00;
         FRAG_APPEND_1_CHAR(code[0]);
         FRAG_APPEND_1_CHAR(code[1]);
@@ -4107,6 +4126,8 @@ do_memory:
   case 'w' : code[0]+=(i.tm.size_offsets&0xff0000)>>16; break;
   case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
   }
+  code[0]<<1;
+  code[0]++;
   FRAG_APPEND_1_CHAR(code[0]);
   code[1]=0;
   FRAG_APPEND_1_CHAR(code[1]);
@@ -4128,6 +4149,8 @@ do_memory:
   case 'w' : code[0]+=(i.tm.size_offsets&0xff0000)>>16; break;
   case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
   }
+  code[0]<<=1;
+  code[0]++;
   xA=16;
   xT=16;
   code[1]=(xA&0xf ) | ((xT&0xf)<<4);
