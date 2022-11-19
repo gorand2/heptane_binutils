@@ -3169,10 +3169,10 @@ case 'b' : code[0]+=(i.tm.size_offsets&0xff000000)>>24; break;
    
     if (hasmem) output_spec_load();
     code[1]=(abs(rB)&0xf)|((abs(rA)&0xf)<<4);
-    code[2]=((abs(rB)&0x10)<<3)|((abs(rA)&0x10)<<2);
+    code[2]=((abs(rB)&0x10)>>3)|((abs(rA)&0x10)>>4);
     code[3]=0;
-    if (rA<0) code[3]|=0x40;
-    if (rB<0) code[3]|=0x20;
+   // if (rA<0) code[3]|=0x40;
+   // if (rB<0) code[3]|=0x20;
     FRAG_APPEND_1_CHAR(code[0]);
     FRAG_APPEND_1_CHAR(code[1]);
     FRAG_APPEND_1_CHAR(code[2]);
