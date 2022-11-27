@@ -3318,7 +3318,7 @@ static void output_cset(void) {
           code[3]|=((i.tm.extension_opcode&6)>>2);
           code[2]|=((i.tm.extension_opcode&8)<<4);
       } else {
-          code[3]|=((i.tm.base_opcode&6)<<2);
+          code[3]|=(((i.tm.base_opcode-200)&6)<<2);
          // code[2]|=((i.tm.extension_opcode&8)<<4);
       }
       FRAG_APPEND_1_CHAR(code[0]);
