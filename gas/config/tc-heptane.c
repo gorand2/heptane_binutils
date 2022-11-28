@@ -3447,7 +3447,7 @@ static void output_mov_ext(void)
         code[0]=i.suffix=='l' ? 190 : 192;
         goto mem_4byte;
     case 193: //movslq
-        code[0]=28;
+        code[0]=0x28;
         break;
     case 187: //movzb*
         code[0]=187;
